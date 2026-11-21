@@ -122,6 +122,7 @@ router.get('/me', authenticate, (req, res) => {
       peran: req.user!.peran,
     },
     ocrMode: isDemoOcrMode() ? 'Demo' : 'Produksi',
+    disableAuth: config.disableAuth,
   });
 });
 

@@ -19,7 +19,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../lib/api';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, ocrMode, logout } = useAuth();
+  const { user, ocrMode, disableAuth, inspectorName, setInspectorName, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [showPwdModal, setShowPwdModal] = useState(false);
@@ -37,11 +37,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { to: '/scan', label: 'Scan Plat', icon: ScanLine, roles: ['Petugas', 'PIC'] },
     { to: '/riwayat', label: 'Riwayat', icon: History, roles: ['Petugas', 'PIC', 'Admin'] },
     { to: '/laporan', label: 'Laporan', icon: FileSpreadsheet, roles: ['PIC'] },
-    { to: '/admin/pengguna', label: 'Pengguna', icon: Users, roles: ['Admin'] },
     { to: '/admin/kendaraan', label: 'Karyawan & Kendaraan', icon: Bike, roles: ['Admin'] },
     { to: '/admin/parameter', label: 'Parameter', icon: SlidersHorizontal, roles: ['Admin'] },
+    { to: '/admin/pengguna', label: 'Pengguna', icon: Users, roles: ['Admin'] },
     { to: '/audit', label: 'Log Audit', icon: ScrollText, roles: ['Admin', 'PIC'] },
-  ].filter((item) => item.roles.includes(user.peran));
+  ].filter((item) => disableAuth || item.roles.includes(user.peran));
 
   const handleLogout = async () => {
     await logout();
@@ -104,29 +104,34 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
         <div className="p-3 border-t border-white/10 space-y-2">
           <div className="hidden lg:block px-2 py-1.5 rounded-xl bg-white/5">
-            <p className="text-xs font-semibold truncate">{user.nama}</p>
+            <p className="text-xs font-semibold truncate">{inspectorName.trim() || user.nama}</p>
             <p className="text-[11px] text-emerald-300">
-              Peran: {user.peran} {ocrMode === 'Demo' ? '· Mode Demo OCR' : ''}
+              {disableAuth ? 'Mode Cepat (Tanpa Login)' : `Peran: ${user.peran}`}
+              {ocrMode === 'Demo' ? ' · Demo OCR' : ''}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowPwdModal(true)}
-            title="Ganti Kata Sandi"
-            className="w-full flex items-center justify-center lg:justify-start gap-2.5 min-h-[44px] px-3 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/10 hover:text-white transition"
-          >
-            <KeyRound className="w-4 h-4 shrink-0" />
-            <span className="hidden lg:inline">Ganti Kata Sandi</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleLogout}
-            title="Keluar"
-            className="w-full flex items-center justify-center lg:justify-start gap-2.5 min-h-[44px] px-3 rounded-xl text-xs font-medium text-red-200 hover:bg-red-500/20 hover:text-white transition"
-          >
-            <LogOut className="w-4 h-4 shrink-0" />
-            <span className="hidden lg:inline">Keluar</span>
-          </button>
+          {!disableAuth && (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowPwdModal(true)}
+                title="Ganti Kata Sandi"
+                className="w-full flex items-center justify-center lg:justify-start gap-2.5 min-h-[44px] px-3 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/10 hover:text-white transition"
+              >
+                <KeyRound className="w-4 h-4 shrink-0" />
+                <span className="hidden lg:inline">Ganti Kata Sandi</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Keluar"
+                className="w-full flex items-center justify-center lg:justify-start gap-2.5 min-h-[44px] px-3 rounded-xl text-xs font-medium text-red-200 hover:bg-red-500/20 hover:text-white transition"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+                <span className="hidden lg:inline">Keluar</span>
+              </button>
+            </>
+          )}
         </div>
       </aside>
 
@@ -139,32 +144,65 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="min-w-0">
             <p className="font-bold text-sm leading-tight truncate">Sistem Inspeksi Kendaraan</p>
             <p className="text-[11px] text-emerald-300 truncate">
-              {user.nama} · {user.peran}
+              {inspectorName.trim() || user.nama}
             </p>
           </div>
         </Link>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setShowPwdModal(true)}
-            aria-label="Ganti kata sandi"
-            className="w-11 h-11 rounded-xl flex items-center justify-center text-slate-200 hover:bg-white/10"
-          >
-            <KeyRound className="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            onClick={handleLogout}
-            aria-label="Keluar"
-            className="w-11 h-11 rounded-xl flex items-center justify-center text-red-200 hover:bg-red-500/20"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
-        </div>
+        {!disableAuth && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setShowPwdModal(true)}
+              aria-label="Ganti kata sandi"
+              className="w-11 h-11 rounded-xl flex items-center justify-center text-slate-200 hover:bg-white/10"
+            >
+              <KeyRound className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              aria-label="Keluar"
+              className="w-11 h-11 rounded-xl flex items-center justify-center text-red-200 hover:bg-red-500/20"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
       <main className="flex-1 min-w-0 pb-24 sm:pb-8">
+        {/* Bilah Input Nama Pemeriksa di bagian atas (Mode Tanpa Login) */}
+        {disableAuth && (
+          <div className="bg-white border-b border-slate-200 sticky top-[60px] sm:top-0 z-20 px-4 sm:px-6 lg:px-8 py-2.5">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <label
+                htmlFor="top-inspector-name"
+                className="text-xs font-bold text-navy-900 whitespace-nowrap flex items-center gap-1.5"
+              >
+                <span className={`w-2 h-2 rounded-full ${inspectorName.trim() ? 'bg-brand-600' : 'bg-amber-500'}`} />
+                Nama Pemeriksa (Inspector):
+              </label>
+              <input
+                id="top-inspector-name"
+                type="text"
+                value={inspectorName}
+                onChange={(e) => setInspectorName(e.target.value)}
+                placeholder="Ketik nama pemeriksa di sini (mis. Raka Pratama)..."
+                className={`flex-1 max-w-md min-h-[44px] px-3.5 py-2 rounded-xl border text-sm font-semibold text-navy-900 focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                  inspectorName.trim()
+                    ? 'border-brand-300 bg-brand-50/40'
+                    : 'border-amber-300 bg-amber-50/50'
+                }`}
+              />
+              {!inspectorName.trim() && (
+                <span className="text-[11px] text-amber-800 font-medium">
+                  Isi nama Anda agar tercatat sebagai petugas pada hasil inspeksi.
+                </span>
+              )}
+            </div>
+          </div>
+        )}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">{children}</div>
       </main>
 

@@ -18,12 +18,34 @@ export class ApiError extends Error {
   }
 }
 
+const INSPECTOR_NAME_KEY = 'sik_inspector_name';
+
+export function getStoredInspectorName(): string {
+  try {
+    return localStorage.getItem(INSPECTOR_NAME_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function setStoredInspectorName(name: string) {
+  try {
+    localStorage.setItem(INSPECTOR_NAME_KEY, name);
+  } catch {
+    // ignore
+  }
+}
+
 export async function apiFetch<T = unknown>(
   url: string,
   options: RequestInit = {}
 ): Promise<T> {
   const headers = new Headers(options.headers || {});
   headers.set('X-Requested-With', 'XMLHttpRequest');
+  const inspectorName = getStoredInspectorName().trim();
+  if (inspectorName) {
+    headers.set('X-Inspector-Name', encodeURIComponent(inspectorName));
+  }
   if (!(options.body instanceof FormData) && options.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }

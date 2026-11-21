@@ -44,7 +44,7 @@ interface ConfirmResponse {
 }
 
 export function ScanPage() {
-  const { user, ocrMode } = useAuth();
+  const { user, ocrMode, disableAuth, inspectorName } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const startManual = searchParams.get('mode') === 'manual';
@@ -687,15 +687,22 @@ export function ScanPage() {
                 />
               )}
 
-              {user?.peran === 'Petugas' ? (
-                <button
-                  type="button"
-                  disabled={startingInspection}
-                  onClick={handleStartInspection}
-                  className="btn-primary w-full text-base"
-                >
-                  {startingInspection ? 'Membuat Formulir Inspeksi...' : 'Mulai Inspeksi'}
-                </button>
+              {disableAuth || user?.peran === 'Petugas' ? (
+                <div className="space-y-2">
+                  {disableAuth && !inspectorName.trim() && (
+                    <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-2.5 font-medium">
+                      Silakan isi <strong>Nama Pemeriksa (Inspector)</strong> di kolom bagian atas terlebih dahulu sebelum memulai inspeksi.
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    disabled={startingInspection || (disableAuth && !inspectorName.trim())}
+                    onClick={handleStartInspection}
+                    className="btn-primary w-full text-base"
+                  >
+                    {startingInspection ? 'Membuat Formulir Inspeksi...' : 'Mulai Inspeksi'}
+                  </button>
+                </div>
               ) : (
                 <div className="p-3 rounded-xl bg-slate-100 text-xs text-slate-700">
                   Akun PIC dapat memverifikasi identitas kendaraan di sini. Pembuatan inspeksi awal dilakukan oleh Petugas; inspeksi ulang dapat dibuat dari halaman Detail Inspeksi.

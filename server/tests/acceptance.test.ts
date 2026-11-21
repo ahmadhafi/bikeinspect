@@ -11,6 +11,7 @@ import { seedDatabase } from '../src/db/seed.js';
 import { createApp } from '../src/index.js';
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sik-test-'));
+config.disableAuth = false;
 config.dbPath = path.join(tmpDir, 'test.db');
 config.uploadDir = path.join(tmpDir, 'uploads');
 fs.mkdirSync(config.uploadDir, { recursive: true });

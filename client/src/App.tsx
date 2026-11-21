@@ -24,7 +24,7 @@ function ProtectedRoute({
   children: React.ReactNode;
   roles?: UserRole[];
 }) {
-  const { user, loading } = useAuth();
+  const { user, loading, disableAuth } = useAuth();
   if (loading) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center text-sm text-slate-500">
@@ -33,7 +33,7 @@ function ProtectedRoute({
     );
   }
   if (!user) return <Navigate to="/masuk" replace />;
-  if (roles && !roles.includes(user.peran)) {
+  if (!disableAuth && roles && !roles.includes(user.peran)) {
     return (
       <AppLayout>
         <div className="card p-8 max-w-md mx-auto text-center space-y-2">

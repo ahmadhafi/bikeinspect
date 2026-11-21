@@ -138,7 +138,7 @@ router.get('/dashboard/summary', authenticate, (req, res) => {
 router.post('/inspections', authenticate, requireRoles('Petugas', 'PIC'), (req, res) => {
   const { kendaraanId, jenis = 'Awal', inspeksiAsalId, isDemo = false, ocrId } = req.body || {};
 
-  if (jenis === 'Awal' && req.user!.peran !== 'Petugas') {
+  if (!config.disableAuth && jenis === 'Awal' && req.user!.peran !== 'Petugas') {
     recordAudit({
       pelakuId: req.user!.id,
       pelakuNama: req.user!.nama,
@@ -588,7 +588,7 @@ router.put('/inspections/:id/draft', authenticate, requireRoles('Petugas', 'PIC'
     res.status(404).json({ error: 'Inspeksi tidak ditemukan.' });
     return;
   }
-  if (insp.petugas_id !== req.user!.id) {
+  if (!config.disableAuth && insp.petugas_id !== req.user!.id) {
     res.status(403).json({ error: 'Anda tidak berhak menyunting draf milik pengguna lain.' });
     return;
   }
@@ -638,7 +638,7 @@ router.post('/inspections/:id/discard', authenticate, requireRoles('Petugas', 'P
     res.status(404).json({ error: 'Inspeksi tidak ditemukan.' });
     return;
   }
-  if (insp.petugas_id !== req.user!.id) {
+  if (!config.disableAuth && insp.petugas_id !== req.user!.id) {
     res.status(403).json({ error: 'Tidak berhak membuang draf milik pengguna lain.' });
     return;
   }
@@ -690,7 +690,7 @@ router.post(
       res.status(404).json({ error: 'Inspeksi tidak ditemukan.' });
       return;
     }
-    if (insp.petugas_id !== req.user!.id) {
+    if (!config.disableAuth && insp.petugas_id !== req.user!.id) {
       res.status(403).json({ error: 'Anda tidak berhak mengunggah foto pada inspeksi ini.' });
       return;
     }
@@ -782,7 +782,7 @@ router.delete(
     const insp = db.prepare('SELECT * FROM inspeksi WHERE id = ?').get(String(req.params.id)) as
       | Record<string, unknown>
       | undefined;
-    if (!insp || insp.status !== 'Draf' || insp.petugas_id !== req.user!.id) {
+    if (!insp || insp.status !== 'Draf' || (!config.disableAuth && insp.petugas_id !== req.user!.id)) {
       res.status(403).json({ error: 'Tidak dapat menghapus foto bukti pada inspeksi ini.' });
       return;
     }
@@ -851,7 +851,7 @@ router.post('/inspections/:id/finalize', authenticate, requireRoles('Petugas', '
     res.status(404).json({ error: 'Inspeksi tidak ditemukan.' });
     return;
   }
-  if (insp.petugas_id !== req.user!.id) {
+  if (!config.disableAuth && insp.petugas_id !== req.user!.id) {
     res.status(403).json({ error: 'Anda tidak berhak memfinalisasi inspeksi milik pengguna lain.' });
     return;
   }

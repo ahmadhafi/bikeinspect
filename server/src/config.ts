@@ -1,8 +1,19 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '../..');
+
+// Muat file .env secara otomatis bila ada (Node.js 22+ built-in)
+const envFilePath = path.resolve(rootDir, '.env');
+if (fs.existsSync(envFilePath) && typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile(envFilePath);
+  } catch {
+    // abaikan bila sudah dimuat oleh cPanel environment variables
+  }
+}
 
 function normalizeBasePath(raw: string | undefined): string {
   if (!raw || raw === '/') return '';
@@ -12,6 +23,8 @@ function normalizeBasePath(raw: string | undefined): string {
 export const config = {
   port: Number(process.env.PORT || 3001),
   nodeEnv: process.env.NODE_ENV || 'development',
+  // Mode cepat tanpa login: cukup isi Nama Pemeriksa di bagian atas aplikasi
+  disableAuth: process.env.DISABLE_AUTH !== 'false',
   basePath: normalizeBasePath(process.env.APP_BASE_PATH || process.env.PASSENGER_BASE_URI),
   appBaseUrl: (process.env.APP_BASE_URL || 'http://localhost:5173').replace(/\/+$/, ''),
   sessionSecret: process.env.SESSION_SECRET || 'dev-sik-session-secret-ganti-di-produksi-32chars',

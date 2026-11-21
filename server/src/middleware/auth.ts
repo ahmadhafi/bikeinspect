@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
+import bcrypt from 'bcryptjs';
 import type { NextFunction, Request, Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config.js';
 import { getDb } from '../db/database.js';
 import { recordAudit } from '../services/audit.js';
@@ -35,7 +37,56 @@ export function getClientIp(req: Request): string {
   return req.socket.remoteAddress || 'unknown';
 }
 
+/**
+ * Mengambil atau membuat pengguna untuk mode cepat tanpa login berdasarkan Nama Pemeriksa.
+ */
+function resolveQuickInspector(rawName: string | undefined): AuthUser {
+  const db = getDb();
+  const cleanName = (rawName || '').trim().slice(0, 80) || 'Petugas Lapangan';
+  const slug = cleanName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '') || 'petugas_lapangan';
+  const username = `insp_${slug}`;
+
+  const existing = db
+    .prepare('SELECT id, username, nama, peran, aktif FROM pengguna WHERE username = ?')
+    .get(username) as AuthUser | undefined;
+
+  if (existing) {
+    if (existing.nama !== cleanName) {
+      db.prepare('UPDATE pengguna SET nama = ?, diubah_pada = ? WHERE id = ?').run(
+        cleanName,
+        new Date().toISOString(),
+        existing.id
+      );
+      existing.nama = cleanName;
+    }
+    return existing;
+  }
+
+  const id = uuidv4();
+  const now = new Date().toISOString();
+  const hash = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 6);
+  db.prepare(
+    `INSERT INTO pengguna (id, username, password_hash, nama, peran, aktif, dibuat_pada, diubah_pada)
+     VALUES (?, ?, ?, ?, 'PIC', 1, ?, ?)`
+  ).run(id, username, hash, cleanName, now, now);
+
+  return { id, username, nama: cleanName, peran: 'PIC', aktif: 1 };
+}
+
 export function authenticate(req: Request, res: Response, next: NextFunction) {
+  if (config.disableAuth) {
+    const headerName =
+      typeof req.headers['x-inspector-name'] === 'string'
+        ? decodeURIComponent(req.headers['x-inspector-name'])
+        : undefined;
+    req.user = resolveQuickInspector(headerName);
+    next();
+    return;
+  }
+
   const token = req.cookies?.[SESSION_COOKIE_NAME];
   if (!token || typeof token !== 'string') {
     res.status(401).json({ error: 'Sesi tidak valid atau telah berakhir. Silakan masuk kembali.' });
@@ -90,7 +141,6 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     return;
   }
 
-  // Perbarui waktu aktivitas terakhir (sliding timeout 30 menit)
   db.prepare('UPDATE sesi SET terakhir_aktif_pada = ? WHERE id = ?').run(
     new Date().toISOString(),
     row.session_id
@@ -109,6 +159,10 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
 
 export function requireRoles(...allowed: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction) => {
+    if (config.disableAuth) {
+      next();
+      return;
+    }
     if (!req.user) {
       res.status(401).json({ error: 'Autentikasi diperlukan.' });
       return;
@@ -135,7 +189,8 @@ export function requireRoles(...allowed: UserRole[]) {
  */
 export function createSignedEvidenceParams(evidenceId: string, userId: string): { token: string; exp: number } {
   const exp = Math.floor(Date.now() / 1000) + config.signedUrlTtlSeconds;
-  const payload = `${evidenceId}:${userId}:${exp}`;
+  const scope = config.disableAuth ? 'open' : userId;
+  const payload = `${evidenceId}:${scope}:${exp}`;
   const token = crypto.createHmac('sha256', config.signedUrlSecret).update(payload).digest('hex');
   return { token, exp };
 }
@@ -148,7 +203,8 @@ export function verifySignedEvidenceParams(
 ): boolean {
   if (!token || !exp || Number.isNaN(exp)) return false;
   if (Math.floor(Date.now() / 1000) > exp) return false;
-  const payload = `${evidenceId}:${userId}:${exp}`;
+  const scope = config.disableAuth ? 'open' : userId;
+  const payload = `${evidenceId}:${scope}:${exp}`;
   const expected = crypto.createHmac('sha256', config.signedUrlSecret).update(payload).digest('hex');
   const a = Buffer.from(token);
   const b = Buffer.from(expected);
