@@ -1,0 +1,18 @@
+{
+  "name": "Sistem Inspeksi Kendaraan",
+  "short_name": "Inspeksi R2",
+  "description": "Aplikasi web inspeksi kendaraan bermotor roda dua di tempat kerja",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F3F6F8",
+  "theme_color": "#0F2A47",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
