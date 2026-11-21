@@ -1,8 +1,4 @@
 ---
-# cPanel Git Version Control Deployment Config
-# Catatan: Aplikasi Node.js dijalankan langsung dari folder repositori (di luar public_html)
-# melalui menu "Setup Node.js App" di cPanel.
 deployment:
   tasks:
-    - /bin/cp -n .env.cpanel .env || true
     - /bin/mkdir -p data/uploads
