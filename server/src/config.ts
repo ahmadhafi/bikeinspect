@@ -5,13 +5,27 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '../..');
 
-// Muat file .env secara otomatis bila ada (Node.js 22+ built-in)
+// Muat file .env tanpa menimpa variabel yang sudah disetel oleh cPanel/LiteSpeed (mis. PORT)
 const envFilePath = path.resolve(rootDir, '.env');
-if (fs.existsSync(envFilePath) && typeof process.loadEnvFile === 'function') {
+if (fs.existsSync(envFilePath)) {
   try {
-    process.loadEnvFile(envFilePath);
+    const content = fs.readFileSync(envFilePath, 'utf8');
+    for (const rawLine of content.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+      const eqIdx = line.indexOf('=');
+      if (eqIdx === -1) continue;
+      const key = line.slice(0, eqIdx).trim();
+      let val = line.slice(eqIdx + 1).trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      if (key && process.env[key] === undefined) {
+        process.env[key] = val;
+      }
+    }
   } catch {
-    // abaikan bila sudah dimuat oleh cPanel environment variables
+    // abaikan jika file tidak terbaca
   }
 }
 

@@ -93,7 +93,7 @@ export function startServer() {
   getDb();
   seedDatabase(false);
   const app = createApp();
-  return app.listen(config.port, '0.0.0.0', () => {
+  return app.listen(config.port, () => {
     console.log(
       `[SIK Server] Berjalan di port ${config.port} (basePath: ${config.basePath || '/'}, OCR: ${
         isDemoOcrMode() ? 'Mode Demo' : 'Produksi'

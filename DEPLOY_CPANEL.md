@@ -37,7 +37,7 @@
    - **Application mode**: `Production`
    - **Application root**: `bikeinspect`
    - **Application URL**: pilih `galaxyfleet.web.id` di dropdown, lalu ketik `bikeinspect` di kotak sebelahnya
-   - **Application startup file**: `server.mjs`
+   - **Application startup file**: `app.cjs`
 4. Klik **Create**.
 5. Setelah dibuat, **jangan hapus** file `.htaccess` yang otomatis dibuat cPanel di `public_html/bikeinspect/.htaccess` (itu yang menghubungkan Apache/Passenger ke Node.js).
 

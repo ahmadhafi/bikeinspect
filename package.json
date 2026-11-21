@@ -2,7 +2,6 @@
   "name": "bikeinspect",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "description": "Sistem Inspeksi Kendaraan Bermotor Roda Dua — Aplikasi Web Mobile-First",
   "engines": {
     "node": ">=22.5.0"
@@ -12,7 +11,7 @@
     "dev": "concurrently -n API,WEB -c green,cyan \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
     "build": "npm --prefix client run build && npm --prefix server run build",
     "build:cpanel": "VITE_BASE_PATH=/bikeinspect/ npm --prefix client run build && npm --prefix server run build",
-    "start": "node server.mjs",
+    "start": "node app.cjs",
     "seed": "npm --prefix server run seed",
     "test": "npm --prefix server run test"
   },
