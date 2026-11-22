@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AdminParametersPage } from './pages/AdminParametersPage';
@@ -14,7 +14,7 @@ import { InspectionSavedPage } from './pages/InspectionSavedPage';
 import { LoginPage } from './pages/LoginPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { ScanPage } from './pages/ScanPage';
-import { BASE_PATH } from './lib/api';
+import { BASE_PATH, IS_STANDALONE } from './lib/api';
 import type { UserRole } from './types';
 
 function ProtectedRoute({
@@ -54,9 +54,16 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const RouterWrapper = ({ children }: { children: React.ReactNode }) =>
+    IS_STANDALONE ? (
+      <HashRouter>{children}</HashRouter>
+    ) : (
+      <BrowserRouter basename={BASE_PATH || undefined}>{children}</BrowserRouter>
+    );
+
   return (
     <AuthProvider>
-      <BrowserRouter basename={BASE_PATH || undefined}>
+      <RouterWrapper>
         <Routes>
           <Route
             path="/masuk"
@@ -156,7 +163,7 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+      </RouterWrapper>
     </AuthProvider>
   );
 }

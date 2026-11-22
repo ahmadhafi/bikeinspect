@@ -1,0 +1,34 @@
+========================================================================
+SISTEM INSPEKSI KENDARAAN (VERSI OFFLINE STANDALONE — TANPA INTERNET)
+========================================================================
+
+Aplikasi ini berjalan 100% LOKAL di perangkat Anda (ponsel Android,
+tablet, iPad, iPhone, atau laptop) TANPA INTERNET dan TANPA SERVER.
+
+Seluruh database kendaraan, karyawan, parameter pemeriksaan, hasil
+inspeksi, foto bukti, log audit, dan ekspor Excel (.xlsx) asli berjalan
+langsung di dalam browser perangkat Anda (IndexedDB).
+
+------------------------------------------------------------------------
+CARA PAKAI DI PONSEL / TABLET ANDROID & iOS
+------------------------------------------------------------------------
+1. Ekstrak (Unzip) file `bikeinspect-offline-standalone.zip` di perangkat.
+2. Buka folder hasil ekstrak, lalu KETUK (buka) file:
+      >>>  bikeinspect-offline.html  <<<
+   Pilih buka dengan browser **Chrome** (Android) atau **Safari** (iOS/iPad).
+3. Ketik **Nama Pemeriksa (Inspector)** di kolom bagian atas.
+4. Selesai! Semua fitur langsung jalan 100% tanpa internet:
+   - Scan Plat / Kamera Belakang / Input Manual (contoh plat seed: B 1234 KSP)
+   - Formulir Inspeksi 4 kelompok + Foto Bukti (tersimpan lokal)
+   - Riwayat, Detail Inspeksi, Tindak Lanjut PIC, Inspeksi Ulang
+   - Ekspor Excel (.xlsx) asli langsung ke folder Download perangkat
+   - Admin: Tambah Karyawan, Kendaraan, dan Parameter Pemeriksaan
+   - Backup & Pulihkan Database (.json) di menu Laporan (untuk memindahkan
+     atau menggabungkan data antar perangkat)
+
+TIPS TAMBAHAN:
+- Anda bisa menekan menu browser (titik tiga) -> "Tambahkan ke Layar
+  Utama / Bookmark" agar mudah dibuka cepat di lapangan.
+- Jangan klik "Hapus Data Situs / Clear Site Data" di browser sebelum
+  mengekspor Excel (.xlsx) atau Backup (.json).
+========================================================================

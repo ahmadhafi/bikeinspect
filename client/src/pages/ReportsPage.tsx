@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { AlertCircle, Download, FileSpreadsheet, History } from 'lucide-react';
-import { apiFetch, apiUrl, formatWib } from '../lib/api';
+import { useEffect, useRef, useState } from 'react';
+import { AlertCircle, Database, Download, FileSpreadsheet, History, Upload } from 'lucide-react';
+import { apiFetch, apiUrl, formatWib, IS_STANDALONE } from '../lib/api';
 
 interface PreviewData {
   totalBaris: number;
@@ -30,6 +30,8 @@ export function ReportsPage() {
   const [logs, setLogs] = useState<ExportLogRow[]>([]);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
+  const [backupMsg, setBackupMsg] = useState('');
+  const importRef = useRef<HTMLInputElement | null>(null);
 
   const buildParams = () => {
     const p = new URLSearchParams();
@@ -62,6 +64,12 @@ export function ReportsPage() {
     setError('');
     setExporting(true);
     try {
+      if (IS_STANDALONE) {
+        const { exportOfflineExcel } = await import('../lib/localBackend');
+        await exportOfflineExcel(buildParams());
+        loadLogs();
+        return;
+      }
       const resp = await fetch(apiUrl(`/api/reports/export?${buildParams()}`), {
         credentials: 'include',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -87,6 +95,30 @@ export function ReportsPage() {
       setError(err instanceof Error ? err.message : 'Gagal mengunduh berkas Excel.');
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleBackupJson = async () => {
+    setBackupMsg('');
+    const { exportLocalDatabaseJson } = await import('../lib/localBackend');
+    await exportLocalDatabaseJson();
+    setBackupMsg('Backup database lokal (.json) berhasil diunduh.');
+  };
+
+  const handleImportJson = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setError('');
+    setBackupMsg('');
+    try {
+      const { importLocalDatabaseJson } = await import('../lib/localBackend');
+      await importLocalDatabaseJson(f);
+      setBackupMsg('Database lokal berhasil dipulihkan dari berkas backup.');
+      loadLogs();
+      apiFetch<PreviewData>(`/api/reports/preview?${buildParams()}`).then(setPreview).catch(() => {});
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal mengimpor berkas backup.');
     }
   };
 
@@ -216,6 +248,34 @@ export function ReportsPage() {
           </div>
         )}
       </div>
+      {/* Backup & Pulihkan Database Lokal (khusus mode offline standalone) */}
+      {IS_STANDALONE && (
+        <div className="card p-5 space-y-3 border-brand-200 bg-brand-50/40">
+          <div className="flex items-center gap-2">
+            <Database className="w-4 h-4 text-brand-700" />
+            <h2 className="font-bold text-sm text-navy-900">Backup & Pulihkan Database Perangkat (Offline)</h2>
+          </div>
+          <p className="text-xs text-slate-600">
+            Seluruh data inspeksi, kendaraan, dan foto bukti tersimpan lokal di perangkat ini tanpa internet. Gunakan tombol di bawah untuk mencadangkan atau memindahkan data antar perangkat.
+          </p>
+          {backupMsg && (
+            <p className="text-xs font-semibold text-brand-800 bg-white border border-brand-200 rounded-xl px-3 py-2">
+              {backupMsg}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={handleBackupJson} className="btn-secondary text-xs">
+              <Download className="w-4 h-4" />
+              <span>Unduh Backup (.json)</span>
+            </button>
+            <input ref={importRef} type="file" accept="application/json" onChange={handleImportJson} className="hidden" />
+            <button type="button" onClick={() => importRef.current?.click()} className="btn-secondary text-xs">
+              <Upload className="w-4 h-4" />
+              <span>Pulihkan dari Backup (.json)</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -412,6 +412,19 @@ export function ScanPage() {
                 onChange={handleUploadFile}
                 className="hidden"
               />
+              {cameraState !== 'active' && (
+                <label className="btn-primary flex-1 bg-brand-600 hover:bg-brand-500 cursor-pointer">
+                  <Camera className="w-5 h-5" />
+                  <span>{scanning ? 'Memindai...' : 'Kamera Belakang'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleUploadFile}
+                    className="hidden"
+                  />
+                </label>
+              )}
               <button
                 type="button"
                 disabled={scanning}

@@ -36,10 +36,17 @@ export function setStoredInspectorName(name: string) {
   }
 }
 
+export const IS_STANDALONE = import.meta.env.VITE_OFFLINE_STANDALONE === 'true';
+
 export async function apiFetch<T = unknown>(
   url: string,
   options: RequestInit = {}
 ): Promise<T> {
+  if (IS_STANDALONE) {
+    const { handleLocalApi } = await import('./localBackend');
+    return handleLocalApi<T>(url, options);
+  }
+
   const headers = new Headers(options.headers || {});
   headers.set('X-Requested-With', 'XMLHttpRequest');
   const inspectorName = getStoredInspectorName().trim();
