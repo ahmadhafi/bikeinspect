@@ -8,8 +8,8 @@ import { ApiError, getStoredInspectorName, validatePlateClient } from './api';
 
 const IDB_NAME = 'bikeinspect_offline_db';
 const IDB_STORE = 'state';
-const IDB_KEY = 'main_db_v1';
-const LS_FALLBACK_KEY = 'bikeinspect_offline_db_v1';
+const IDB_KEY = 'main_db_v2';
+const LS_FALLBACK_KEY = 'bikeinspect_offline_db_v2';
 
 interface LocalDb {
   pengguna: Array<{ id: string; username: string; nama: string; peran: 'Petugas' | 'PIC' | 'Admin'; aktif: number; dibuat_pada: string; diubah_pada: string }>;
@@ -109,32 +109,7 @@ async function saveDbToStorage(db: LocalDb): Promise<void> {
 }
 
 function createSeedDb(): LocalDb {
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-  const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString();
-
-  const pengguna = [
-    { id: 'u-petugas', username: 'petugas', nama: 'Raka Pratama', peran: 'Petugas' as const, aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-    { id: 'u-pic', username: 'pic', nama: 'Dewi Anggraini', peran: 'PIC' as const, aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-    { id: 'u-admin', username: 'admin', nama: 'Agus Setiawan', peran: 'Admin' as const, aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-  ];
-
-  const karyawan = [
-    { id: 'emp-1', nik: 'EMP-2021-0142', nama: 'Budi Santoso', departemen: 'HSE', aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-    { id: 'emp-2', nik: 'EMP-2022-0318', nama: 'Ahmad Fauzi', departemen: 'Logistik', aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-    { id: 'emp-3', nik: 'EMP-2020-0087', nama: 'Siti Rahmawati', departemen: 'Produksi', aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-    { id: 'emp-4', nik: 'EMP-2023-0511', nama: 'Dedi Kurniawan', departemen: 'Pemeliharaan', aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-    { id: 'emp-5', nik: 'EMP-2021-0209', nama: 'Rina Wijaya', departemen: 'HR & GA', aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-    { id: 'emp-6', nik: 'EMP-2024-0604', nama: 'Hendra Pratama', departemen: 'Gudang', aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-  ];
-
-  const kendaraan = [
-    { id: 'veh-1', plat_normal: 'B1234KSP', plat_tampil: 'B 1234 KSP', merek: 'Honda', tipe: 'Beat', tahun: 2021, warna: 'Hitam', karyawan_id: 'emp-1', status_akses: 'Ditangguhkan Sementara' as const, aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-    { id: 'veh-2', plat_normal: 'B5678XYZ', plat_tampil: 'B 5678 XYZ', merek: 'Yamaha', tipe: 'NMAX', tahun: 2023, warna: 'Hitam', karyawan_id: 'emp-2', status_akses: 'Aktif' as const, aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-    { id: 'veh-3', plat_normal: 'B2468MNO', plat_tampil: 'B 2468 MNO', merek: 'Honda', tipe: 'Vario 160', tahun: 2023, warna: 'Putih', karyawan_id: 'emp-3', status_akses: 'Aktif' as const, aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-    { id: 'veh-4', plat_normal: 'D3579ABC', plat_tampil: 'D 3579 ABC', merek: 'Yamaha', tipe: 'Aerox 155', tahun: 2022, warna: 'Merah', karyawan_id: 'emp-4', status_akses: 'Aktif' as const, aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-    { id: 'veh-5', plat_normal: 'B9012KLM', plat_tampil: 'B 9012 KLM', merek: 'Honda', tipe: 'Scoopy', tahun: 2022, warna: 'Krem', karyawan_id: 'emp-5', status_akses: 'Aktif' as const, aktif: 1, dibuat_pada: yesterday, diubah_pada: yesterday },
-  ];
+  const now = new Date().toISOString();
 
   const parameter_pemeriksaan: LocalDb['parameter_pemeriksaan'] = [
     { id: 'p-1', kelompok: 'Administrasi', nama: 'SIM C Sesuai Golongan & Masa Berlaku', deskripsi: 'Pemeriksaan visual SIM C pengendara masih berlaku.', wajib: 1, jenis_temuan: 'Administrasi', boleh_tidak_berlaku: 0, wajib_foto: 0, acuan_jenis: 'Internal', acuan_teks: 'Ketentuan Keselamatan Berkendara Internal', urutan: 1, versi: 1, aktif: 1 },
@@ -157,113 +132,31 @@ function createSeedDb(): LocalDb {
     { id: 'p-18', kelompok: 'Pengendara', nama: 'Perlengkapan Tambahan Perusahaan', deskripsi: 'Rompi reflektif atau kartu akses parkir sesuai kebijakan area (opsional).', wajib: 0, jenis_temuan: 'Fisik', boleh_tidak_berlaku: 1, wajib_foto: 0, acuan_jenis: 'Internal', acuan_teks: 'Kebijakan Area Parkir Perusahaan', urutan: 18, versi: 1, aktif: 1 },
   ];
 
-  const sampleSvgPhoto =
-    'data:image/svg+xml;base64,' +
-    btoa(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#1e293b"/><text x="50%" y="48%" dominant-baseline="middle" text-anchor="middle" fill="#f8fafc" font-family="sans-serif" font-size="15" font-weight="bold">Foto Bukti Contoh</text><text x="50%" y="62%" dominant-baseline="middle" text-anchor="middle" fill="#94a3b8" font-family="sans-serif" font-size="12">Tersimpan Lokal di Perangkat</text></svg>'
-    );
-
-  const inspeksi: LocalDb['inspeksi'] = [
-    {
-      id: 'insp-1', kode_inspeksi: 'INS-20261120-0001', kendaraan_id: 'veh-1',
-      karyawan_id_snapshot: 'emp-1', nama_karyawan_snapshot: 'Budi Santoso', nik_snapshot: 'EMP-2021-0142', departemen_snapshot: 'HSE',
-      plat_tampil_snapshot: 'B 1234 KSP', merek_tipe_snapshot: 'Honda Beat', tahun_snapshot: 2021, warna_snapshot: 'Hitam',
-      petugas_id: 'u-petugas', petugas_nama: 'Raka Pratama', jenis: 'Awal', inspeksi_asal_id: null,
-      status: 'Final', hasil: 'Ada Temuan', status_tindak_lanjut: 'Dalam Proses', kunci_idempotensi: 'seed-1', is_demo: 0,
-      masa_berlaku_sim: '2028-08-15', masa_berlaku_stnk_pajak: '2027-08-20', catatan_umum: null,
-      dibuat_pada: yesterday, diubah_pada: yesterday, difinalkan_pada: yesterday,
-    },
-    {
-      id: 'insp-2', kode_inspeksi: 'INS-20261121-0001', kendaraan_id: 'veh-2',
-      karyawan_id_snapshot: 'emp-2', nama_karyawan_snapshot: 'Ahmad Fauzi', nik_snapshot: 'EMP-2022-0318', departemen_snapshot: 'Logistik',
-      plat_tampil_snapshot: 'B 5678 XYZ', merek_tipe_snapshot: 'Yamaha NMAX', tahun_snapshot: 2023, warna_snapshot: 'Hitam',
-      petugas_id: 'u-petugas', petugas_nama: 'Raka Pratama', jenis: 'Awal', inspeksi_asal_id: null,
-      status: 'Final', hasil: 'Ada Temuan', status_tindak_lanjut: 'Menunggu Tindak Lanjut PIC', kunci_idempotensi: 'seed-2', is_demo: 0,
-      masa_berlaku_sim: '2029-03-10', masa_berlaku_stnk_pajak: '2026-10-01', catatan_umum: null,
-      dibuat_pada: twoHoursAgo, diubah_pada: twoHoursAgo, difinalkan_pada: twoHoursAgo,
-    },
-    {
-      id: 'insp-3', kode_inspeksi: 'INS-20261121-0002', kendaraan_id: 'veh-3',
-      karyawan_id_snapshot: 'emp-3', nama_karyawan_snapshot: 'Siti Rahmawati', nik_snapshot: 'EMP-2020-0087', departemen_snapshot: 'Produksi',
-      plat_tampil_snapshot: 'B 2468 MNO', merek_tipe_snapshot: 'Honda Vario 160', tahun_snapshot: 2023, warna_snapshot: 'Putih',
-      petugas_id: 'u-petugas', petugas_nama: 'Raka Pratama', jenis: 'Awal', inspeksi_asal_id: null,
-      status: 'Final', hasil: 'Sesuai Seluruhnya', status_tindak_lanjut: 'Tidak Perlu', kunci_idempotensi: 'seed-3', is_demo: 0,
-      masa_berlaku_sim: '2029-11-01', masa_berlaku_stnk_pajak: '2027-05-15', catatan_umum: null,
-      dibuat_pada: oneHourAgo, diubah_pada: oneHourAgo, difinalkan_pada: oneHourAgo,
-    },
-  ];
-
-  const inspeksi_item: LocalDb['inspeksi_item'] = [];
-  const bukti_foto: LocalDb['bukti_foto'] = [];
-  const temuan: LocalDb['temuan'] = [];
-
-  for (const p of parameter_pemeriksaan) {
-    // insp-1 (B 1234 KSP — Knalpot temuan)
-    const isKnalpot = p.nama === 'Knalpot';
-    const it1 = `it-1-${p.id}`;
-    inspeksi_item.push({
-      id: it1, inspeksi_id: 'insp-1', parameter_id: p.id, parameter_versi: 1,
-      kelompok_snapshot: p.kelompok, nama_snapshot: p.nama, deskripsi_snapshot: p.deskripsi,
-      wajib_snapshot: p.wajib, jenis_temuan_snapshot: p.jenis_temuan, boleh_tidak_berlaku_snapshot: p.boleh_tidak_berlaku,
-      wajib_foto_snapshot: p.wajib_foto, acuan_jenis_snapshot: p.acuan_jenis, acuan_teks_snapshot: p.acuan_teks,
-      urutan_snapshot: p.urutan, status: isKnalpot ? 'Tidak Sesuai' : 'Sesuai',
-      catatan: isKnalpot ? 'Knalpot tidak sesuai standar pabrikan (suara bising).' : null,
-      alasan_tidak_berlaku: null, temuan_asal_id: null,
-    });
-    if (isKnalpot) {
-      bukti_foto.push({ id: 'foto-1', inspeksi_item_id: it1, nama_asli: 'knalpot_1234.png', jenis: 'Fisik', ukuran: 2048, tipe_mime: 'image/svg+xml', data_url: sampleSvgPhoto, diambil_pada: yesterday, diunggah_oleh: 'Raka Pratama' });
-      temuan.push({ id: 'tem-1', inspeksi_id: 'insp-1', inspeksi_item_id: it1, status: 'Terbuka', item_verifikasi_id: null, diverifikasi_pada: null, dibuat_pada: yesterday });
-    }
-
-    // insp-2 (B 5678 XYZ — Spion & STNK temuan)
-    const isSpion = p.nama === 'Dua Spion';
-    const isStnk = p.nama === 'STNK Kendaraan';
-    const it2 = `it-2-${p.id}`;
-    inspeksi_item.push({
-      id: it2, inspeksi_id: 'insp-2', parameter_id: p.id, parameter_versi: 1,
-      kelompok_snapshot: p.kelompok, nama_snapshot: p.nama, deskripsi_snapshot: p.deskripsi,
-      wajib_snapshot: p.wajib, jenis_temuan_snapshot: p.jenis_temuan, boleh_tidak_berlaku_snapshot: p.boleh_tidak_berlaku,
-      wajib_foto_snapshot: p.wajib_foto, acuan_jenis_snapshot: p.acuan_jenis, acuan_teks_snapshot: p.acuan_teks,
-      urutan_snapshot: p.urutan, status: isSpion || isStnk ? 'Tidak Sesuai' : 'Sesuai',
-      catatan: isSpion ? 'Spion kanan tidak terpasang.' : isStnk ? 'Tidak membawa STNK asli saat pemeriksaan.' : null,
-      alasan_tidak_berlaku: null, temuan_asal_id: null,
-    });
-    if (isSpion) {
-      bukti_foto.push({ id: 'foto-2', inspeksi_item_id: it2, nama_asli: 'spion_kanan.png', jenis: 'Fisik', ukuran: 2048, tipe_mime: 'image/svg+xml', data_url: sampleSvgPhoto, diambil_pada: twoHoursAgo, diunggah_oleh: 'Raka Pratama' });
-    }
-    if (isSpion || isStnk) {
-      temuan.push({ id: `tem-2-${p.id}`, inspeksi_id: 'insp-2', inspeksi_item_id: it2, status: 'Terbuka', item_verifikasi_id: null, diverifikasi_pada: null, dibuat_pada: twoHoursAgo });
-    }
-
-    // insp-3 (B 2468 MNO — semua Sesuai)
-    inspeksi_item.push({
-      id: `it-3-${p.id}`, inspeksi_id: 'insp-3', parameter_id: p.id, parameter_versi: 1,
-      kelompok_snapshot: p.kelompok, nama_snapshot: p.nama, deskripsi_snapshot: p.deskripsi,
-      wajib_snapshot: p.wajib, jenis_temuan_snapshot: p.jenis_temuan, boleh_tidak_berlaku_snapshot: p.boleh_tidak_berlaku,
-      wajib_foto_snapshot: p.wajib_foto, acuan_jenis_snapshot: p.acuan_jenis, acuan_teks_snapshot: p.acuan_teks,
-      urutan_snapshot: p.urutan, status: 'Sesuai', catatan: null, alasan_tidak_berlaku: null, temuan_asal_id: null,
-    });
-  }
-
   return {
-    pengguna,
-    karyawan,
-    kendaraan,
+    pengguna: [],
+    karyawan: [],
+    kendaraan: [],
     permintaan_pendaftaran_kendaraan: [],
     parameter_pemeriksaan,
-    inspeksi,
-    inspeksi_item,
-    bukti_foto,
-    temuan,
-    teguran_manual: [
-      { id: 'teg-1', inspeksi_id: 'insp-1', dikirim_pada: yesterday, saluran: 'Email Manual', catatan: 'Teguran email manual sudah dikirim terkait penggantian knalpot standar.', dicatat_oleh_nama: 'Dewi Anggraini', dicatat_pada: yesterday },
-    ],
+    inspeksi: [],
+    inspeksi_item: [],
+    bukti_foto: [],
+    temuan: [],
+    teguran_manual: [],
     addendum_inspeksi: [],
-    penangguhan_akses: [
-      { id: 'susp-1', kendaraan_id: 'veh-1', status: 'Aktif', alasan: 'Temuan knalpot non-standar belum diperbaiki; menunggu inspeksi ulang.', berlaku_efektif_pada: yesterday, dicatat_oleh_nama: 'Dewi Anggraini', dicatat_pada: yesterday, pemulihan_efektif_pada: null, pemulihan_catatan: null, dipulihkan_oleh_nama: null, temuan_ids: ['tem-1'] },
-    ],
+    penangguhan_akses: [],
     audit_log: [
-      { id: 'aud-1', waktu: yesterday, pelaku_nama: 'Sistem Lokal', entitas: 'sistem', id_entitas: 'seed', aksi: 'INISIALISASI_DATABASE_LOKAL', nilai_sebelum: null, nilai_sesudah: JSON.stringify({ mode: 'Offline Standalone' }), alamat_ip: 'lokal' },
+      {
+        id: 'aud-init',
+        waktu: now,
+        pelaku_nama: 'Sistem Lokal',
+        entitas: 'sistem',
+        id_entitas: 'init',
+        aksi: 'INISIALISASI_DATABASE_KOSONG',
+        nilai_sebelum: null,
+        nilai_sesudah: JSON.stringify({ parameterAktif: parameter_pemeriksaan.length }),
+        alamat_ip: 'perangkat-lokal',
+      },
     ],
     ekspor_log: [],
   };
@@ -674,6 +567,79 @@ export async function handleLocalApi<T>(rawUrl: string, options: RequestInit = {
     addAudit(db, 'permintaan_pendaftaran_kendaraan', id, 'LAPOR_KENDARAAN_BELUM_TERDAFTAR', { plat: check.formatted });
     await saveDbToStorage(db);
     return { id, platTampil: check.formatted, pesan: 'Laporan kendaraan belum terdaftar tersimpan.' } as T;
+  }
+
+  // 5b. Pendaftaran cepat kendaraan & pemilik langsung saat inspeksi
+  if (pathname === '/api/scan/quick-register' && method === 'POST') {
+    const check = validatePlateClient(String(body.plate || ''));
+    if (!check.valid) throw new ApiError(check.error || 'Format plat tidak valid.', 400);
+    const namaKaryawan = String(body.namaKaryawan || '').trim();
+    const merek = String(body.merek || '').trim();
+    const tipe = String(body.tipe || '').trim();
+    const warna = String(body.warna || '').trim();
+    if (!namaKaryawan || !merek || !tipe || !warna) {
+      throw new ApiError('Nama pemilik, merek, tipe, dan warna kendaraan wajib diisi.', 400);
+    }
+
+    const now = new Date().toISOString();
+    const cleanNik = String(body.nik || '').trim() || `NIK-${Date.now().toString().slice(-6)}`;
+    const cleanDept = String(body.departemen || '').trim() || '-';
+
+    let emp = db.karyawan.find((e) => e.nik.toLowerCase() === cleanNik.toLowerCase());
+    if (!emp) {
+      emp = {
+        id: uid(),
+        nik: cleanNik,
+        nama: namaKaryawan,
+        departemen: cleanDept,
+        aktif: 1,
+        dibuat_pada: now,
+        diubah_pada: now,
+      };
+      db.karyawan.push(emp);
+    }
+
+    const platNormal = check.formatted.replace(/\s+/g, '');
+    const tahun = Number(body.tahun) || new Date().getFullYear();
+    const veh = {
+      id: uid(),
+      plat_normal: platNormal,
+      plat_tampil: check.formatted,
+      merek,
+      tipe,
+      tahun,
+      warna,
+      karyawan_id: emp.id,
+      status_akses: 'Aktif' as const,
+      aktif: 1,
+      dibuat_pada: now,
+      diubah_pada: now,
+    };
+    db.kendaraan.unshift(veh);
+    addAudit(db, 'kendaraan', veh.id, 'DAFTAR_CEPAT_SAAT_INSPEKSI', {
+      plat: veh.plat_tampil,
+      pemilik: emp.nama,
+      merek,
+      tipe,
+      tahun,
+      warna,
+    });
+    await saveDbToStorage(db);
+
+    return {
+      vehicle: {
+        id: veh.id,
+        platNormal: veh.plat_normal,
+        platTampil: veh.plat_tampil,
+        merek: veh.merek,
+        tipe: veh.tipe,
+        tahun: veh.tahun,
+        warna: veh.warna,
+        statusAkses: 'Aktif',
+        karyawan: { id: emp.id, nama: emp.nama, nik: emp.nik, departemen: emp.departemen },
+        penangguhanAktif: null,
+      },
+    } as T;
   }
 
   // 6. Create Inspection Draft

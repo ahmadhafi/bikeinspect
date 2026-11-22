@@ -217,4 +217,68 @@ router.post('/report-unregistered', authenticate, requireRoles('Petugas', 'PIC')
   });
 });
 
+// Pendaftaran cepat kendaraan & pemilik langsung saat inspeksi
+router.post('/quick-register', authenticate, requireRoles('Petugas', 'PIC', 'Admin'), (req, res) => {
+  const { plate, namaKaryawan, nik, departemen, merek, tipe, tahun, warna } = req.body || {};
+  const norm = normalizeAndValidatePlate(typeof plate === 'string' ? plate : '');
+  if (!norm.valid) {
+    res.status(400).json({ error: norm.error || 'Format plat tidak valid.' });
+    return;
+  }
+  if (!namaKaryawan || !String(namaKaryawan).trim() || !merek || !tipe || !warna) {
+    res.status(400).json({ error: 'Nama pemilik, merek, tipe, dan warna kendaraan wajib diisi.' });
+    return;
+  }
+
+  const db = getDb();
+  const now = new Date().toISOString();
+  const cleanNik = String(nik || '').trim() || `NIK-${Date.now().toString().slice(-6)}`;
+  const cleanDept = String(departemen || '').trim() || '-';
+
+  let emp = db.prepare('SELECT * FROM karyawan WHERE LOWER(nik) = LOWER(?)').get(cleanNik) as
+    | { id: string; nik: string; nama: string; departemen: string }
+    | undefined;
+
+  if (!emp) {
+    const empId = uuidv4();
+    db.prepare(
+      `INSERT INTO karyawan (id, nik, nama, departemen, aktif, dibuat_pada, diubah_pada)
+       VALUES (?, ?, ?, ?, 1, ?, ?)`
+    ).run(empId, cleanNik, String(namaKaryawan).trim(), cleanDept, now, now);
+    emp = { id: empId, nik: cleanNik, nama: String(namaKaryawan).trim(), departemen: cleanDept };
+  }
+
+  const vehId = uuidv4();
+  const vehYear = Number(tahun) || new Date().getFullYear();
+  db.prepare(
+    `INSERT INTO kendaraan (id, plat_normal, plat_tampil, merek, tipe, tahun, warna, karyawan_id, status_akses, aktif, dibuat_pada, diubah_pada)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Aktif', 1, ?, ?)`
+  ).run(vehId, norm.platNormal, norm.platTampil, String(merek).trim(), String(tipe).trim(), vehYear, String(warna).trim(), emp.id, now, now);
+
+  recordAudit({
+    pelakuId: req.user!.id,
+    pelakuNama: req.user!.nama,
+    entitas: 'kendaraan',
+    idEntitas: vehId,
+    aksi: 'DAFTAR_CEPAT_SAAT_INSPEKSI',
+    nilaiSesudah: { plat: norm.platTampil, pemilik: emp.nama, merek, tipe, tahun: vehYear, warna },
+    alamatIp: getClientIp(req),
+  });
+
+  res.status(201).json({
+    vehicle: {
+      id: vehId,
+      platNormal: norm.platNormal,
+      platTampil: norm.platTampil,
+      merek: String(merek).trim(),
+      tipe: String(tipe).trim(),
+      tahun: vehYear,
+      warna: String(warna).trim(),
+      statusAkses: 'Aktif',
+      karyawan: emp,
+      penangguhanAktif: null,
+    },
+  });
+});
+
 export default router;

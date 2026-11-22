@@ -68,10 +68,17 @@ export function ScanPage() {
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleMatch | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Laporan kendaraan belum terdaftar (AL-06 / K-06)
-  const [reportNote, setReportNote] = useState('');
-  const [reportSent, setReportSent] = useState(false);
-  const [reporting, setReporting] = useState(false);
+  // Pendaftaran cepat kendaraan & pemilik langsung saat inspeksi
+  const [quickReg, setQuickReg] = useState({
+    namaKaryawan: '',
+    nik: '',
+    departemen: '',
+    merek: '',
+    tipe: '',
+    tahun: String(new Date().getFullYear()),
+    warna: '',
+  });
+  const [registering, setRegistering] = useState(false);
 
   const [startingInspection, setStartingInspection] = useState(false);
 
@@ -135,7 +142,6 @@ export function ScanPage() {
     setErrorMsg('');
     setConfirmResult(null);
     setSelectedVehicle(null);
-    setReportSent(false);
     setScanning(true);
     try {
       const form = new FormData();
@@ -198,7 +204,6 @@ export function ScanPage() {
     if (!plateCheck.valid) return;
     setErrorMsg('');
     setConfirming(true);
-    setReportSent(false);
     try {
       const res = await apiFetch<ConfirmResponse>('/api/scan/confirm-plate', {
         method: 'POST',
@@ -242,25 +247,38 @@ export function ScanPage() {
     }
   };
 
-  const handleReportUnregistered = async (e: React.FormEvent) => {
+  const handleQuickRegisterAndStart = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!confirmResult) return;
-    setReporting(true);
+    if (disableAuth && !inspectorName.trim()) {
+      setErrorMsg('Silakan isi Nama Pemeriksa (Inspector) di kolom bagian atas terlebih dahulu.');
+      return;
+    }
+    setRegistering(true);
     setErrorMsg('');
     try {
-      await apiFetch('/api/scan/report-unregistered', {
+      const regRes = await apiFetch<{ vehicle: VehicleMatch }>('/api/scan/quick-register', {
         method: 'POST',
         body: JSON.stringify({
           plate: confirmResult.platTampil,
-          catatan: reportNote,
+          ...quickReg,
+          tahun: Number(quickReg.tahun) || new Date().getFullYear(),
         }),
       });
-      setReportSent(true);
-      setReportNote('');
+      const inspRes = await apiFetch<{ id: string }>('/api/inspections', {
+        method: 'POST',
+        body: JSON.stringify({
+          kendaraanId: regRes.vehicle.id,
+          jenis: 'Awal',
+          isDemo: usedDemoOcr,
+          ocrId: ocrResult?.ocrId || undefined,
+        }),
+      });
+      navigate(`/inspeksi/${inspRes.id}/edit`);
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Gagal mengirim laporan ke Admin.');
+      setErrorMsg(err instanceof Error ? err.message : 'Gagal mendaftarkan kendaraan dan memulai inspeksi.');
     } finally {
-      setReporting(false);
+      setRegistering(false);
     }
   };
 
@@ -270,7 +288,6 @@ export function ScanPage() {
     setConfirmResult(null);
     setSelectedVehicle(null);
     setErrorMsg('');
-    setReportSent(false);
     setUsedDemoOcr(false);
   };
 
@@ -607,41 +624,120 @@ export function ScanPage() {
             </form>
           </div>
 
-          {/* P-03: Hasil Pencocokan Database Internal */}
+          {/* P-03: Kendaraan Baru — Daftarkan Langsung Saat Inspeksi */}
           {confirmResult?.matchStatus === 'unregistered' && (
-            <div className="card p-5 border-red-200 bg-danger-50/40 space-y-4">
+            <div className="card p-5 border-brand-200 bg-brand-50/40 space-y-4">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 text-danger-700 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-6 h-6 text-brand-700 shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-bold text-danger-700">Kendaraan Belum Terdaftar</h3>
-                  <p className="text-xs text-slate-700 mt-1">
-                    Plat <strong>{confirmResult.platTampil}</strong> tidak ditemukan di database kendaraan internal. Petugas tidak dapat membuat inspeksi atau mendaftarkan kendaraan sendiri.
+                  <h3 className="font-bold text-navy-900">
+                    Daftarkan Kendaraan Baru: {confirmResult.platTampil}
+                  </h3>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Plat belum tercatat di perangkat ini. Isi data pemilik & kendaraan di bawah untuk langsung mendaftarkan dan memulai inspeksi.
                   </p>
                 </div>
               </div>
 
-              {reportSent ? (
-                <div className="p-3 rounded-xl bg-brand-50 border border-brand-200 text-brand-800 text-xs font-semibold">
-                  Laporan telah dikirim ke Admin untuk proses pendaftaran kendaraan.
-                </div>
-              ) : (
-                <form onSubmit={handleReportUnregistered} className="space-y-2.5">
-                  <label className="block text-xs font-semibold text-slate-700">
-                    Laporkan ke Admin untuk didaftarkan (opsional catatan):
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={reportNote}
-                    onChange={(e) => setReportNote(e.target.value)}
-                    placeholder="Misal: Honda Vario hitam, nama pengendara dan departemen..."
-                    className="input-field min-h-[72px] py-2"
-                  />
-                  <button type="submit" disabled={reporting} className="btn-secondary w-full">
-                    <Send className="w-4 h-4" />
-                    <span>{reporting ? 'Mengirim...' : 'Laporkan ke Admin'}</span>
-                  </button>
-                </form>
+              {disableAuth && !inspectorName.trim() && (
+                <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-2.5 font-medium">
+                  Silakan isi <strong>Nama Pemeriksa (Inspector)</strong> di kolom bagian atas terlebih dahulu.
+                </p>
               )}
+
+              <form onSubmit={handleQuickRegisterAndStart} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Pemilik / Karyawan *</label>
+                  <input
+                    type="text"
+                    required
+                    value={quickReg.namaKaryawan}
+                    onChange={(e) => setQuickReg((p) => ({ ...p, namaKaryawan: e.target.value }))}
+                    placeholder="Contoh: Budi Santoso"
+                    className="input-field"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">NIK (Opsional)</label>
+                    <input
+                      type="text"
+                      value={quickReg.nik}
+                      onChange={(e) => setQuickReg((p) => ({ ...p, nik: e.target.value }))}
+                      placeholder="Contoh: EMP-001"
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Departemen *</label>
+                    <input
+                      type="text"
+                      required
+                      value={quickReg.departemen}
+                      onChange={(e) => setQuickReg((p) => ({ ...p, departemen: e.target.value }))}
+                      placeholder="Contoh: HSE / Produksi"
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Merek Motor *</label>
+                    <input
+                      type="text"
+                      required
+                      value={quickReg.merek}
+                      onChange={(e) => setQuickReg((p) => ({ ...p, merek: e.target.value }))}
+                      placeholder="Honda / Yamaha"
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Tipe *</label>
+                    <input
+                      type="text"
+                      required
+                      value={quickReg.tipe}
+                      onChange={(e) => setQuickReg((p) => ({ ...p, tipe: e.target.value }))}
+                      placeholder="Beat / Vario / NMAX"
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Tahun</label>
+                    <input
+                      type="number"
+                      min={1980}
+                      max={2035}
+                      value={quickReg.tahun}
+                      onChange={(e) => setQuickReg((p) => ({ ...p, tahun: e.target.value }))}
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Warna *</label>
+                    <input
+                      type="text"
+                      required
+                      value={quickReg.warna}
+                      onChange={(e) => setQuickReg((p) => ({ ...p, warna: e.target.value }))}
+                      placeholder="Hitam / Putih / Merah"
+                      className="input-field"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={registering || (disableAuth && !inspectorName.trim())}
+                  className="btn-primary w-full text-base"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>{registering ? 'Menyimpan & Membuka Formulir...' : 'Simpan Kendaraan & Mulai Inspeksi'}</span>
+                </button>
+              </form>
             </div>
           )}
 
